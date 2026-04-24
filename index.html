@@ -1,17 +1,881 @@
-Privacy Policy for LLM Prompt Saver
-Last updated: July 28, 2024
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no"
+  />
+  <title>NEON BREAKOUT '86</title>
+  <style>
+    :root {
+      --bg-1: #060815;
+      --bg-2: #101937;
+      --panel: rgba(11, 18, 43, 0.7);
+      --text: #ecf2ff;
+      --cyan: #63e5ff;
+    }
 
-Information Collection:
-LLM Prompt Saver collects and stores user-created text prompts for various Language Learning Models (LLMs).
-Use of Information:
-The collected prompts are used solely to provide the core functionality of the extension - allowing users to save and reuse prompts for multiple LLMs.
-Data Storage:
-All data (prompts) is stored locally in the user's browser using Chrome's storage API. No data is transmitted or stored on external servers.
-Data Access:
-The saved prompts are accessible only to the user on their local device. The developers of LLM Prompt Saver do not have access to any user data.
-Data Control:
-Users can delete their saved prompts at any time within the extension. All data is automatically deleted when the extension is uninstalled.
-Updates to Privacy Policy:
-We may update this privacy policy from time to time. We will notify users of any changes by posting the new privacy policy on this page.
-Contact:
-If you have any questions about this privacy policy, please contact us at: ryanlow@gmail.com
+    * { box-sizing: border-box; }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      font-family: "Trebuchet MS", "Segoe UI", Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 15% 15%, rgba(109, 81, 255, 0.25) 0%, transparent 40%),
+        radial-gradient(circle at 85% 5%, rgba(99, 229, 255, 0.18) 0%, transparent 38%),
+        radial-gradient(circle at 50% 120%, rgba(255, 100, 191, 0.14) 0%, transparent 44%),
+        linear-gradient(180deg, var(--bg-2) 0%, var(--bg-1) 60%, #04050d 100%);
+      overflow: hidden;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(255, 255, 255, 0.03) 0px,
+        rgba(255, 255, 255, 0.03) 1px,
+        transparent 2px,
+        transparent 4px
+      );
+      opacity: 0.12;
+      mix-blend-mode: screen;
+      animation: drift 8s linear infinite;
+    }
+
+    @keyframes drift {
+      from { transform: translateY(0px); }
+      to { transform: translateY(8px); }
+    }
+
+    .wrap {
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      padding:
+        max(14px, env(safe-area-inset-top))
+        max(14px, env(safe-area-inset-right))
+        max(14px, env(safe-area-inset-bottom))
+        max(14px, env(safe-area-inset-left));
+    }
+
+    .game-shell {
+      width: min(98vw, 1120px);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+      border: 1px solid rgba(135, 167, 255, 0.35);
+      border-radius: 16px;
+      box-shadow:
+        0 18px 70px rgba(0, 0, 0, 0.52),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2),
+        0 0 0 1px rgba(95, 227, 255, 0.12);
+      padding: clamp(10px, 1.8vw, 16px);
+      backdrop-filter: blur(4px);
+    }
+
+    .hud {
+      display: grid;
+      grid-template-columns: 1.25fr repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .chip {
+      background: var(--panel);
+      border: 1px solid rgba(116, 151, 255, 0.45);
+      border-radius: 10px;
+      padding: 9px 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      font-weight: 700;
+      font-size: clamp(0.72rem, 1.7vw, 0.88rem);
+      box-shadow: inset 0 0 20px rgba(99, 229, 255, 0.05);
+      white-space: nowrap;
+    }
+
+    .brand {
+      color: var(--cyan);
+      text-shadow: 0 0 14px rgba(99, 229, 255, 0.65), 0 0 34px rgba(99, 229, 255, 0.25);
+      font-size: clamp(0.83rem, 1.85vw, 1.08rem);
+      letter-spacing: 1px;
+    }
+
+    .value {
+      color: #fff;
+      margin-left: 8px;
+      text-shadow: 0 0 8px rgba(255, 255, 255, 0.35);
+    }
+
+    .canvas-wrap {
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(123, 160, 255, 0.5);
+      box-shadow:
+        inset 0 0 30px rgba(21, 36, 89, 0.65),
+        0 0 24px rgba(99, 229, 255, 0.18);
+    }
+
+    canvas {
+      width: 100%;
+      height: auto;
+      display: block;
+      background: linear-gradient(180deg, #0f1634 0%, #090f25 100%);
+      touch-action: none;
+    }
+
+    .controls {
+      margin-top: 10px;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      font-size: 0.9rem;
+    }
+
+    .pill {
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: rgba(17, 28, 65, 0.9);
+      border: 1px solid rgba(119, 153, 255, 0.45);
+      color: #dce8ff;
+      box-shadow: inset 0 0 16px rgba(99, 229, 255, 0.08);
+      font-size: clamp(0.72rem, 1.5vw, 0.92rem);
+    }
+
+    .touch-controls {
+      margin-top: 10px;
+      display: none;
+      grid-template-columns: 1fr 1fr 1.2fr;
+      gap: 10px;
+    }
+
+    .touch-btn {
+      border: 1px solid rgba(138, 173, 255, 0.5);
+      background: rgba(13, 22, 53, 0.95);
+      color: #d9e8ff;
+      border-radius: 14px;
+      min-height: 56px;
+      font-size: 1.05rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      box-shadow:
+        inset 0 0 20px rgba(99, 229, 255, 0.08),
+        0 6px 18px rgba(0, 0, 0, 0.32);
+      touch-action: manipulation;
+    }
+
+    .touch-btn:active,
+    .touch-btn.active {
+      transform: translateY(1px);
+      background: rgba(24, 39, 87, 0.98);
+      box-shadow:
+        inset 0 0 24px rgba(99, 229, 255, 0.2),
+        0 2px 10px rgba(0, 0, 0, 0.4);
+    }
+
+    @media (max-width: 1024px), (pointer: coarse) {
+      .hud { grid-template-columns: 1fr 1fr; }
+      .controls { display: none; }
+      .touch-controls { display: grid; }
+      body::before { opacity: 0.08; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <main class="game-shell">
+      <header class="hud">
+        <div class="chip brand">NEON BREAKOUT '86</div>
+        <div class="chip">Score <span class="value" id="score">0</span></div>
+        <div class="chip">Lives <span class="value" id="lives">3</span></div>
+        <div class="chip">Level <span class="value" id="level">1</span></div>
+      </header>
+
+      <div class="canvas-wrap" id="canvasWrap">
+        <canvas id="gameCanvas" width="920" height="560" aria-label="Neon Breakout game canvas"></canvas>
+      </div>
+
+      <section class="controls">
+        <span class="pill">Move: ← → or A / D</span>
+        <span class="pill">Launch / Restart: Space</span>
+        <span class="pill">Touch: drag paddle or use buttons below.</span>
+      </section>
+
+      <section class="touch-controls" aria-label="Touch controls">
+        <button class="touch-btn" id="leftBtn" type="button">◀ Left</button>
+        <button class="touch-btn" id="rightBtn" type="button">Right ▶</button>
+        <button class="touch-btn" id="launchBtn" type="button">Launch</button>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const canvasWrap = document.getElementById('canvasWrap');
+    const ctx = canvas.getContext('2d');
+
+    const scoreEl = document.getElementById('score');
+    const livesEl = document.getElementById('lives');
+    const levelEl = document.getElementById('level');
+
+    const leftBtn = document.getElementById('leftBtn');
+    const rightBtn = document.getElementById('rightBtn');
+    const launchBtn = document.getElementById('launchBtn');
+
+    const BASE_WIDTH = 920;
+    const BASE_HEIGHT = 560;
+    const ASPECT = BASE_WIDTH / BASE_HEIGHT;
+    const IS_COARSE_POINTER = window.matchMedia('(pointer: coarse)').matches;
+
+    const state = {
+      score: 0,
+      lives: 3,
+      level: 1,
+      combo: 0,
+      running: false,
+      gameOver: false,
+      levelClear: false,
+      leftPressed: false,
+      rightPressed: false,
+      ballAttached: true,
+      touchDragActive: false,
+      stars: [],
+      particles: [],
+      deviceScale: 1,
+      paddle: {
+        width: 138,
+        height: 16,
+        x: BASE_WIDTH / 2 - 69,
+        y: BASE_HEIGHT - 44,
+        speed: 10,
+      },
+      ball: {
+        x: BASE_WIDTH / 2,
+        y: BASE_HEIGHT - 58,
+        radius: 9,
+        dx: 4.4,
+        dy: -4.4,
+        maxSpeed: 9.5,
+        trail: [],
+      },
+      bricks: [],
+      brickCols: 12,
+      brickW: 66,
+      brickH: 24,
+      brickGap: 8,
+      brickTop: 74,
+      brickLeft: 24,
+    };
+
+    const brickPalette = ['#ff6b6b', '#ff9f6b', '#ffd166', '#9bff6a', '#63e5ff', '#9f81ff', '#ff64bf'];
+
+    function fitCanvasToViewport() {
+      const rect = canvasWrap.getBoundingClientRect();
+      const maxWidth = rect.width;
+
+      // Keep enough room for HUD + touch controls on iPad portrait.
+      const reservedHeight = IS_COARSE_POINTER ? 220 : 170;
+      const maxHeight = Math.max(window.innerHeight - reservedHeight, 280);
+
+      let targetWidth = maxWidth;
+      let targetHeight = targetWidth / ASPECT;
+
+      if (targetHeight > maxHeight) {
+        targetHeight = maxHeight;
+        targetWidth = targetHeight * ASPECT;
+      }
+
+      canvas.style.width = `${targetWidth}px`;
+      canvas.style.height = `${targetHeight}px`;
+
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      state.deviceScale = dpr;
+      canvas.width = Math.round(targetWidth * dpr);
+      canvas.height = Math.round(targetHeight * dpr);
+
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function worldWidth() {
+      return canvas.width / state.deviceScale;
+    }
+
+    function worldHeight() {
+      return canvas.height / state.deviceScale;
+    }
+
+    function resizeGame() {
+      const oldW = worldWidth();
+      const oldH = worldHeight();
+
+      fitCanvasToViewport();
+
+      const newW = worldWidth();
+      const newH = worldHeight();
+
+      const sx = oldW ? newW / oldW : 1;
+      const sy = oldH ? newH / oldH : 1;
+
+      state.paddle.width = Math.max(106, Math.min(newW * 0.23, 165));
+      state.paddle.height = Math.max(12, Math.min(newH * 0.032, 18));
+      state.paddle.y = newH - Math.max(34, newH * 0.07);
+      state.paddle.speed = Math.max(7.4, newW * 0.012);
+
+      state.ball.radius = Math.max(7, Math.min(newW * 0.011, 11));
+      state.ball.maxSpeed = Math.max(8.2, newW * 0.012);
+
+      state.brickCols = newW < 820 ? 10 : 12;
+      state.brickGap = newW < 820 ? 6 : 8;
+      state.brickW = Math.floor((newW - 40 - (state.brickCols - 1) * state.brickGap) / state.brickCols);
+      state.brickH = Math.max(19, Math.floor(newH * 0.043));
+      state.brickTop = Math.max(60, Math.floor(newH * 0.11));
+      state.brickLeft = Math.floor((newW - (state.brickCols * state.brickW + (state.brickCols - 1) * state.brickGap)) / 2);
+
+      state.paddle.x = Math.max(0, Math.min(newW - state.paddle.width, state.paddle.x * sx));
+      state.ball.x = Math.max(state.ball.radius, Math.min(newW - state.ball.radius, state.ball.x * sx));
+      state.ball.y = Math.max(state.ball.radius, Math.min(newH - state.ball.radius, state.ball.y * sy));
+
+      state.stars = [];
+      makeStars();
+      createBricks();
+      if (state.ballAttached) {
+        state.ball.x = state.paddle.x + state.paddle.width / 2;
+        state.ball.y = state.paddle.y - state.ball.radius - 2;
+      }
+    }
+
+    function makeStars() {
+      const starCount = IS_COARSE_POINTER ? 58 : 90;
+      state.stars = Array.from({ length: starCount }, () => ({
+        x: Math.random() * worldWidth(),
+        y: Math.random() * worldHeight(),
+        r: Math.random() * 1.6 + 0.3,
+        speed: Math.random() * 0.35 + 0.07,
+        alpha: Math.random() * 0.6 + 0.2,
+      }));
+    }
+
+    function createBricks() {
+      const rows = Math.min(6 + Math.floor((state.level - 1) / 2), 9);
+      state.bricks = [];
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < state.brickCols; c++) {
+          const x = state.brickLeft + c * (state.brickW + state.brickGap);
+          const y = state.brickTop + r * (state.brickH + state.brickGap);
+          state.bricks.push({
+            x,
+            y,
+            w: state.brickW,
+            h: state.brickH,
+            color: brickPalette[(r + c) % brickPalette.length],
+            alive: true,
+            points: (rows - r) * 6,
+          });
+        }
+      }
+    }
+
+    function spawnBurst(x, y, color, count = 14) {
+      for (let i = 0; i < count; i++) {
+        state.particles.push({
+          x,
+          y,
+          dx: (Math.random() - 0.5) * 4.5,
+          dy: (Math.random() - 0.5) * 4.5,
+          life: 1,
+          decay: Math.random() * 0.02 + 0.012,
+          size: Math.random() * 3 + 1,
+          color,
+        });
+      }
+    }
+
+    function resetBallAndPaddle() {
+      const w = worldWidth();
+      const p = state.paddle;
+      const b = state.ball;
+      p.x = w / 2 - p.width / 2;
+      state.ballAttached = true;
+      b.x = p.x + p.width / 2;
+      b.y = p.y - b.radius - 2;
+      b.trail = [];
+
+      const direction = Math.random() > 0.5 ? 1 : -1;
+      const boost = Math.min(1 + (state.level - 1) * 0.08, 1.6);
+      const speedBase = Math.max(4.2, w * 0.0048);
+      b.dx = speedBase * direction * boost;
+      b.dy = -speedBase * boost;
+      state.combo = 0;
+    }
+
+    function updateHud() {
+      scoreEl.textContent = state.score;
+      livesEl.textContent = state.lives;
+      levelEl.textContent = state.level;
+    }
+
+    function drawArenaGlow() {
+      const w = worldWidth();
+      const h = worldHeight();
+      const g = ctx.createRadialGradient(w / 2, h * 0.25, 40, w / 2, h / 2, w * 0.7);
+      g.addColorStop(0, 'rgba(99,229,255,0.14)');
+      g.addColorStop(0.4, 'rgba(159,129,255,0.08)');
+      g.addColorStop(1, 'rgba(8,11,26,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, h);
+    }
+
+    function drawStars() {
+      const w = worldWidth();
+      const h = worldHeight();
+      ctx.save();
+      for (const s of state.stars) {
+        s.y += s.speed;
+        if (s.y > h) {
+          s.y = -2;
+          s.x = Math.random() * w;
+        }
+        ctx.globalAlpha = s.alpha;
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function drawGrid() {
+      const w = worldWidth();
+      const h = worldHeight();
+      ctx.save();
+      ctx.strokeStyle = 'rgba(115, 155, 255, 0.12)';
+      ctx.lineWidth = 1;
+      for (let x = 0; x < w; x += 40) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, h);
+        ctx.stroke();
+      }
+      for (let y = 0; y < h; y += 36) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(w, y);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawBricks() {
+      for (const brick of state.bricks) {
+        if (!brick.alive) continue;
+
+        const grad = ctx.createLinearGradient(brick.x, brick.y, brick.x, brick.y + brick.h);
+        grad.addColorStop(0, '#ffffff');
+        grad.addColorStop(0.2, brick.color);
+        grad.addColorStop(1, 'rgba(12,18,40,0.92)');
+
+        ctx.save();
+        ctx.shadowBlur = IS_COARSE_POINTER ? 9 : 12;
+        ctx.shadowColor = brick.color;
+        ctx.fillStyle = grad;
+        ctx.fillRect(brick.x, brick.y, brick.w, brick.h);
+        ctx.globalAlpha = 0.35;
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(brick.x + 4, brick.y + 4, brick.w - 8, 4);
+        ctx.restore();
+      }
+    }
+
+    function drawPaddle() {
+      const p = state.paddle;
+      ctx.save();
+      ctx.shadowBlur = IS_COARSE_POINTER ? 16 : 24;
+      ctx.shadowColor = 'rgba(99,229,255,0.9)';
+      const grad = ctx.createLinearGradient(p.x, p.y, p.x, p.y + p.height);
+      grad.addColorStop(0, '#ffffff');
+      grad.addColorStop(0.2, '#83f1ff');
+      grad.addColorStop(1, '#2ab5e4');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.roundRect(p.x, p.y, p.width, p.height, 7);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawBall() {
+      const b = state.ball;
+      b.trail.push({ x: b.x, y: b.y });
+      if (b.trail.length > (IS_COARSE_POINTER ? 8 : 12)) b.trail.shift();
+
+      ctx.save();
+      for (let i = 0; i < b.trail.length; i++) {
+        const t = b.trail[i];
+        const alpha = (i + 1) / b.trail.length * 0.22;
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = '#ff7bc8';
+        ctx.beginPath();
+        ctx.arc(t.x, t.y, b.radius * (i / b.trail.length), 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+
+      ctx.save();
+      ctx.shadowBlur = IS_COARSE_POINTER ? 14 : 22;
+      ctx.shadowColor = 'rgba(255,100,191,0.95)';
+      const g = ctx.createRadialGradient(b.x - 3, b.y - 3, 2, b.x, b.y, b.radius + 3);
+      g.addColorStop(0, '#fff');
+      g.addColorStop(0.35, '#ffd5eb');
+      g.addColorStop(1, '#ff64bf');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function updateParticles() {
+      for (const p of state.particles) {
+        p.x += p.dx;
+        p.y += p.dy;
+        p.dy += 0.02;
+        p.life -= p.decay;
+      }
+      const cap = IS_COARSE_POINTER ? 110 : 180;
+      state.particles = state.particles.filter((p) => p.life > 0).slice(-cap);
+    }
+
+    function drawParticles() {
+      ctx.save();
+      for (const p of state.particles) {
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.x, p.y, p.size, p.size);
+      }
+      ctx.restore();
+    }
+
+    function drawMessage(title, subtitle) {
+      const w = worldWidth();
+      const h = worldHeight();
+      ctx.save();
+      ctx.fillStyle = 'rgba(5,10,24,0.72)';
+      ctx.fillRect(0, 0, w, h);
+
+      ctx.textAlign = 'center';
+      ctx.font = `700 ${Math.max(34, Math.floor(w * 0.06))}px Trebuchet MS`;
+      ctx.fillStyle = '#63e5ff';
+      ctx.shadowColor = 'rgba(99,229,255,0.7)';
+      ctx.shadowBlur = 18;
+      ctx.fillText(title, w / 2, h / 2 - 12);
+
+      ctx.shadowBlur = 0;
+      ctx.font = `700 ${Math.max(16, Math.floor(w * 0.025))}px Trebuchet MS`;
+      ctx.fillStyle = '#ecf2ff';
+      ctx.fillText(subtitle, w / 2, h / 2 + 28);
+      ctx.restore();
+    }
+
+    function clampSpeed() {
+      const b = state.ball;
+      b.dx = Math.max(-b.maxSpeed, Math.min(b.dx, b.maxSpeed));
+      b.dy = Math.max(-b.maxSpeed, Math.min(b.dy, b.maxSpeed));
+    }
+
+    function handleInput() {
+      const p = state.paddle;
+      const w = worldWidth();
+      if (state.leftPressed) p.x -= p.speed;
+      if (state.rightPressed) p.x += p.speed;
+      p.x = Math.max(0, Math.min(w - p.width, p.x));
+      if (state.ballAttached) state.ball.x = p.x + p.width / 2;
+    }
+
+    function wallCollision() {
+      const b = state.ball;
+      const w = worldWidth();
+      const h = worldHeight();
+      if (b.x - b.radius <= 0 && b.dx < 0) b.dx *= -1;
+      if (b.x + b.radius >= w && b.dx > 0) b.dx *= -1;
+      if (b.y - b.radius <= 0 && b.dy < 0) b.dy *= -1;
+
+      if (b.y - b.radius > h) {
+        state.lives -= 1;
+        updateHud();
+        state.combo = 0;
+
+        if (state.lives <= 0) {
+          state.gameOver = true;
+          state.running = false;
+        } else {
+          resetBallAndPaddle();
+        }
+      }
+    }
+
+    function paddleCollision() {
+      const b = state.ball;
+      const p = state.paddle;
+
+      const hit =
+        b.y + b.radius >= p.y &&
+        b.y - b.radius <= p.y + p.height &&
+        b.x >= p.x &&
+        b.x <= p.x + p.width &&
+        b.dy > 0;
+
+      if (!hit) return;
+
+      const relative = (b.x - (p.x + p.width / 2)) / (p.width / 2);
+      const angle = relative * (Math.PI / 3.1);
+      const speed = Math.min(Math.hypot(b.dx, b.dy) + 0.2, b.maxSpeed + 1.2);
+
+      b.dx = speed * Math.sin(angle);
+      b.dy = -Math.abs(speed * Math.cos(angle));
+      b.y = p.y - b.radius - 1;
+      spawnBurst(b.x, b.y + 6, '#63e5ff', IS_COARSE_POINTER ? 6 : 9);
+      state.combo = 0;
+    }
+
+    function brickCollision() {
+      const b = state.ball;
+      let aliveCount = 0;
+
+      for (const brick of state.bricks) {
+        if (!brick.alive) continue;
+        aliveCount += 1;
+
+        const collideX = b.x + b.radius > brick.x && b.x - b.radius < brick.x + brick.w;
+        const collideY = b.y + b.radius > brick.y && b.y - b.radius < brick.y + brick.h;
+        if (!collideX || !collideY) continue;
+
+        brick.alive = false;
+        aliveCount -= 1;
+        state.combo += 1;
+        const comboBonus = Math.min(state.combo * 2, 30);
+        state.score += brick.points + comboBonus;
+        updateHud();
+        spawnBurst(b.x, b.y, brick.color, IS_COARSE_POINTER ? 11 : 18);
+
+        const prevX = b.x - b.dx;
+        const fromLeft = prevX + b.radius <= brick.x;
+        const fromRight = prevX - b.radius >= brick.x + brick.w;
+
+        if (fromLeft || fromRight) b.dx *= -1;
+        else b.dy *= -1;
+
+        break;
+      }
+
+      if (aliveCount === 0) {
+        state.level += 1;
+        updateHud();
+        createBricks();
+        resetBallAndPaddle();
+        state.levelClear = true;
+        state.running = false;
+      }
+    }
+
+    function updateBall() {
+      if (state.ballAttached) return;
+      const b = state.ball;
+      b.x += b.dx;
+      b.y += b.dy;
+
+      wallCollision();
+      paddleCollision();
+      brickCollision();
+      clampSpeed();
+    }
+
+    function render() {
+      const w = worldWidth();
+      const h = worldHeight();
+      ctx.clearRect(0, 0, w, h);
+      drawArenaGlow();
+      drawStars();
+      drawGrid();
+      drawBricks();
+      drawPaddle();
+      drawBall();
+      updateParticles();
+      drawParticles();
+
+      if (state.gameOver) {
+        drawMessage('GAME OVER', 'Tap Launch or press Space to restart');
+      } else if (!state.running) {
+        if (state.levelClear) {
+          drawMessage(`LEVEL ${state.level - 1} CLEAR`, 'Tap Launch for next level');
+        } else {
+          drawMessage("NEON BREAKOUT '86", 'Tap canvas or Launch to play');
+        }
+      }
+    }
+
+    function loop() {
+      handleInput();
+      if (state.running && !state.gameOver) updateBall();
+      render();
+      requestAnimationFrame(loop);
+    }
+
+    function restartGame() {
+      state.score = 0;
+      state.lives = 3;
+      state.level = 1;
+      state.combo = 0;
+      state.gameOver = false;
+      state.levelClear = false;
+      state.running = false;
+      state.particles = [];
+      createBricks();
+      resetBallAndPaddle();
+      updateHud();
+    }
+
+    function launchOrRestart() {
+      if (state.gameOver) {
+        restartGame();
+        return;
+      }
+      if (!state.running) {
+        state.levelClear = false;
+        state.running = true;
+        state.ballAttached = false;
+      }
+    }
+
+    function pointToWorldX(clientX) {
+      const rect = canvas.getBoundingClientRect();
+      const ratio = worldWidth() / rect.width;
+      return (clientX - rect.left) * ratio;
+    }
+
+    function movePaddleTo(clientX) {
+      const p = state.paddle;
+      const w = worldWidth();
+      const worldX = pointToWorldX(clientX);
+      p.x = Math.max(0, Math.min(w - p.width, worldX - p.width / 2));
+      if (state.ballAttached) state.ball.x = p.x + p.width / 2;
+    }
+
+    function setButtonState(button, isActive) {
+      button.classList.toggle('active', isActive);
+    }
+
+    function bindPress(button, onDown, onUp = () => {}) {
+      const start = (e) => {
+        e.preventDefault();
+        onDown();
+      };
+      const end = (e) => {
+        e.preventDefault();
+        onUp();
+      };
+      button.addEventListener('pointerdown', start);
+      button.addEventListener('pointerup', end);
+      button.addEventListener('pointercancel', end);
+      button.addEventListener('pointerleave', end);
+    }
+
+    document.addEventListener('keydown', (e) => {
+      const key = e.key.toLowerCase();
+      if (key === 'arrowleft' || key === 'a') state.leftPressed = true;
+      if (key === 'arrowright' || key === 'd') state.rightPressed = true;
+      if (key === ' ') {
+        e.preventDefault();
+        launchOrRestart();
+      }
+    });
+
+    document.addEventListener('keyup', (e) => {
+      const key = e.key.toLowerCase();
+      if (key === 'arrowleft' || key === 'a') state.leftPressed = false;
+      if (key === 'arrowright' || key === 'd') state.rightPressed = false;
+    });
+
+    canvas.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      state.touchDragActive = true;
+      movePaddleTo(e.clientX);
+      if (!state.running || state.gameOver) launchOrRestart();
+      canvas.setPointerCapture(e.pointerId);
+    });
+
+    canvas.addEventListener('pointermove', (e) => {
+      if (!state.touchDragActive) return;
+      e.preventDefault();
+      movePaddleTo(e.clientX);
+    });
+
+    function endCanvasPointer(e) {
+      state.touchDragActive = false;
+      if (e && typeof e.pointerId === 'number' && canvas.hasPointerCapture(e.pointerId)) {
+        canvas.releasePointerCapture(e.pointerId);
+      }
+    }
+
+    canvas.addEventListener('pointerup', endCanvasPointer);
+    canvas.addEventListener('pointercancel', endCanvasPointer);
+
+    bindPress(
+      leftBtn,
+      () => {
+        state.leftPressed = true;
+        setButtonState(leftBtn, true);
+      },
+      () => {
+        state.leftPressed = false;
+        setButtonState(leftBtn, false);
+      }
+    );
+
+    bindPress(
+      rightBtn,
+      () => {
+        state.rightPressed = true;
+        setButtonState(rightBtn, true);
+      },
+      () => {
+        state.rightPressed = false;
+        setButtonState(rightBtn, false);
+      }
+    );
+
+    launchBtn.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      setButtonState(launchBtn, true);
+      launchOrRestart();
+    });
+
+    launchBtn.addEventListener('pointerup', (e) => {
+      e.preventDefault();
+      setButtonState(launchBtn, false);
+    });
+
+    launchBtn.addEventListener('pointerleave', () => setButtonState(launchBtn, false));
+    launchBtn.addEventListener('pointercancel', () => setButtonState(launchBtn, false));
+
+    window.addEventListener('resize', resizeGame);
+    window.addEventListener('orientationchange', () => setTimeout(resizeGame, 100));
+
+    fitCanvasToViewport();
+    resizeGame();
+    updateHud();
+    resetBallAndPaddle();
+    loop();
+  </script>
+</body>
+</html>
